@@ -8,7 +8,7 @@ Author: Richard Foltyn
 import os.path
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
 from scipy.interpolate import interp1d
 from collections import namedtuple
 
@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    Params = namedtuple('Params', ['beta', 'r', 'a_max', 'N_a'])
+    Params = namedtuple('Params', ['beta', 'r', 'grid_a'])
     beta = 0.96
     r = 0.04
 
@@ -27,11 +27,11 @@ def main():
     a_max = 5
     N_a = 100
 
-    # store parameters in common structure
-    par = Params(beta, r, a_max, N_a)
-
     # Create asset grid
-    grid_a = powerspace(1.0e-8, par.a_max, par.N_a, 1.5)
+    grid_a = powerspace(1.0e-8, a_max, N_a, 1.5)
+
+    # store parameters in common structure
+    par = Params(beta, r, grid_a)
 
     # Solve for sequence of coefficients using analytical solution and
     # plot result
@@ -43,7 +43,7 @@ def main():
     plot_coefs_pfun(par, fn)
 
     # solve the household problem for given parameters
-    vfun, pfun_sav = vfi(par, grid_a)
+    vfun, pfun_sav = vfi(par)
 
     # recover consumption policy functions
     cah = (1.0 + par.r) * grid_a
@@ -62,21 +62,28 @@ def main():
     # Plot results
     fig, axes = plt.subplots(1, 3, sharex=True, sharey=False, figsize=(9, 3.5))
 
-    axes[0].plot(grid_a, vfun, lw=2.0, alpha=0.7, label='Numerical')
-    axes[0].plot(grid_a, vfun_analytical, lw=1.0, ls='-.', c='black',
+    xvalues = par.grid_a
+    xticks = np.arange(0, a_max + 0.1, 1)
+
+    axes[0].plot(xvalues, vfun, lw=2.0, alpha=0.7, label='Numerical')
+    axes[0].plot(xvalues, vfun_analytical, lw=1.0, ls='-.', c='black',
                  label='Analytical')
     axes[0].legend(loc='lower right')
-    axes[0].set_ylim((max(vfun[0], -500.0), vfun[-1]))
+    ylim = axes[0].get_ylim()
+    axes[0].set_ylim((max(vfun[0], -500.0), ylim[-1]))
+    axes[0].set_xticks(xticks)
     axes[0].set_title('Value func. $V$')
     axes[0].set_xlabel('Assets')
 
     axes[1].plot(grid_a, pfun_sav, lw=2.0, alpha=0.7, label='Savings policy')
     axes[1].plot(grid_a, (1.0 - kappa)*cah, lw=1.0, ls='-.', c='black')
+    axes[1].set_xticks(xticks)
     axes[1].set_title(r'Savings $a^{\prime}$')
     axes[1].set_xlabel('Assets')
 
     axes[2].plot(grid_a, pfun_cons, lw=2.0, alpha=0.7, label='Consumption policy')
     axes[2].plot(grid_a, kappa * cah, lw=1.0, ls='-.', c='black')
+    axes[2].set_xticks(xticks)
     axes[2].set_title(r'Consumption $c$')
     axes[2].set_xlabel('Assets')
 
@@ -98,12 +105,10 @@ def update_coefs(par, A, B):
     return A_upd, B_upd
 
 
-def f_objective(sav, a, par, f_vfun):
+def f_objective(sav, cah, par, f_vfun):
 
-    sav = float(sav)
-
-    # cash at hand
-    cah = (1.0 + par.r) * a
+    if sav < 0.0 or sav > cah:
+        return np.inf
 
     # Consumption implied by savings level
     cons = cah - sav
@@ -112,19 +117,16 @@ def f_objective(sav, a, par, f_vfun):
     vcont = f_vfun(sav)
 
     # evaluate objective: log(c) + beta * V(a')
-    if cons <= 0.0:
-        obj = - np.inf
-    else:
-        obj = np.log(cons) + par.beta * vcont
+    obj = np.log(cons) + par.beta * vcont
 
     # We are running a minimiser, return negative of objective value
     return -obj
 
 
-def vfi(par, grid_a, tol=1e-5, maxiter=1000):
+def vfi(par, tol=1e-5, maxiter=1000):
 
-    N_a = len(grid_a)
-    vfun = np.log(1.0 + par.r) + np.log(grid_a)
+    N_a = len(par.grid_a)
+    vfun = np.log(1.0 + par.r) + np.log(par.grid_a)
     vfun_upd = np.zeros(N_a)
     pfun_sav = np.zeros(N_a)
 
@@ -138,7 +140,7 @@ def vfi(par, grid_a, tol=1e-5, maxiter=1000):
 
     plot_iter = (0, ) + tuple(np.arange(4, 30, 5))
     # Plot only from this index onward
-    ifrom = np.where(grid_a > 1.0e-2)[0][0]
+    ifrom = np.where(par.grid_a > 1.0e-2)[0][0]
 
     for it in range(maxiter):
 
@@ -146,16 +148,16 @@ def vfi(par, grid_a, tol=1e-5, maxiter=1000):
         # analytical solution
         if it in plot_iter:
             label = 'Numerical' if it == plot_iter[0] else None
-            ax.plot(grid_a[ifrom:], vfun[ifrom:], color='steelblue',
+            ax.plot(par.grid_a[ifrom:], vfun[ifrom:], color='steelblue',
                     lw=2.0, alpha=0.6, label=label)
 
-            vfun_analytical = An + Bn * np.log(grid_a)
+            vfun_analytical = An + Bn * np.log(par.grid_a)
             label = 'Analytical' if it == plot_iter[0] else None
-            ax.plot(grid_a[ifrom:], vfun_analytical[ifrom:], color='black',
+            ax.plot(par.grid_a[ifrom:], vfun_analytical[ifrom:], color='black',
                     lw=1.0, ls='-.', label=label)
 
             # Annotate point with current iteration number
-            xy = grid_a[-1], vfun[-1]
+            xy = par.grid_a[-1], vfun[-1]
             ax.annotate(f'{it+1}', xy, (5, 0), 'data', 'offset points',
                         va='center')
 
@@ -163,23 +165,20 @@ def vfi(par, grid_a, tol=1e-5, maxiter=1000):
         An, Bn = update_coefs(par, An, Bn)
 
         # create interpolating function for continuation value
-        f_vfun = interp1d(grid_a, vfun, kind='linear', bounds_error=False,
+        f_vfun = interp1d(par.grid_a, vfun, kind='linear', bounds_error=False,
                           fill_value='extrapolate', assume_sorted=True,
                           copy=False)
 
-        for ia, a in enumerate(grid_a):
+        for ia, a in enumerate(par.grid_a):
             # Solve maximization problem at given asset level
             # Cash-at-hand at current asset level
             cah = (1.0 + par.r) * a
             # Restrict maximisation to following interval:
-            bounds = (0.0, cah)
-            # Initial guess for optimal savings: take result from last iteration
-            sav_init = pfun_sav[ia]
+            bounds = (1.0e-20, cah)
             # Arguments to be passed to objective function
-            args = (a, par, f_vfun)
+            args = (cah, par, f_vfun)
             # perform maximisation
-            res = minimize(f_objective, sav_init, method='L-BFGS-B',
-                           args=args, bounds=(bounds, ))
+            res = minimize_scalar(f_objective, bracket=bounds, args=args)
 
             vopt = - res.fun
             sav_opt = float(res.x)
@@ -200,7 +199,7 @@ def vfi(par, grid_a, tol=1e-5, maxiter=1000):
             msg = f'VFI: Iteration {it:3d}, dV={diff:4.2e}'
             print(msg)
 
-    ax.set_xlim(grid_a[0], grid_a[-1] * 1.1)
+    ax.set_xlim(par.grid_a[0], par.grid_a[-1] * 1.1)
     ylim = ax.get_ylim()
     ax.set_ylim((max(-40.0, ylim[0]), ylim[1]))
     ax.set_xlabel('Assets')
@@ -243,12 +242,12 @@ def plot_coefs_vfun(par, filename, maxiter=1000, tol=1.0e-6):
 
     iterations = np.arange(1, len(Aseq) + 1)
 
-    axes[0].plot(iterations, Aseq, lw=2.0, label=r'$A_n$')
+    axes[0].plot(iterations, Aseq, lw=2.0, label=r'$\chi_n$')
     axes[0].legend(loc='upper right')
     axes[0].set_xlabel('Log iteration')
     axes[0].set_xscale('log')
 
-    axes[1].plot(iterations, Bseq, lw=2.0, label=r'$B_n$')
+    axes[1].plot(iterations, Bseq, lw=2.0, label=r'$\varphi_n$')
     axes[1].legend(loc='lower right')
     axes[1].set_xlabel('Log iteration')
     axes[1].set_xscale('log')

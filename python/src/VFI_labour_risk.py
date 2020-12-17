@@ -35,8 +35,8 @@ def main():
     N_y = 3
 
     # Parameters for asset grid
-    a_max = 20
-    N_a = 50
+    a_max = 50
+    N_a = 1000
 
     # Create asset grid
     grid_a = powerspace(0.0, a_max, N_a, 1.3)

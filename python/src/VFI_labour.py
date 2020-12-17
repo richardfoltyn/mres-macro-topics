@@ -30,8 +30,8 @@ def main():
     r = 0.04
 
     # Parameters for asset grid
-    a_max = 20
-    N_a = 1000
+    a_max = 50
+    N_a = 50
 
     # store parameters in common structure
     par = Params(gamma, beta, r, a_max, N_a, 1.0)
@@ -205,8 +205,6 @@ def vfi_interp(par, grid_a, kind='linear', tol=1e-5, maxiter=1000):
             # Arguments to be passed to objective function
             args = (cah, par, f_vfun)
             # perform maximisation
-            # res = minimize(f_objective, sav_init, method='L-BFGS-B',
-            #                args=args, bounds=(bounds, ))
             res = minimize_scalar(f_objective, bracket=bounds, args=args)
 
             vopt = - res.fun
