@@ -1,4 +1,14 @@
 """
+Topics in Macroeconomics (ECON5098), 2020-21
+
+Solve household problem with risky labour income using value function
+iteration (VFI).
+
+This file implements two different solution methods:
+    1.  VFI with grid search, allowing only for savings choices on the
+        asset grid.
+    2.  VFI with interpolation, allowing for savings choices that need not
+        be on the asset grid.
 
 
 Author: Richard Foltyn
@@ -131,6 +141,26 @@ def main():
 
 
 def vfi_grid(par, tol=1e-5, maxiter=1000):
+    """
+    Solve the household problem with risky labour income using VFI with grid
+    search.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters and grids
+    tol : float, optional
+        Termination tolerance
+    maxiter : int, optional
+        Max. number of iterations
+
+    Returns
+    -------
+    vfun : np.ndarray
+        Array containing the value function
+    pfun_sav : np.ndarray
+        Array containing the savings policy function
+    """
 
     t0 = perf_counter()
 
@@ -198,6 +228,26 @@ def vfi_grid(par, tol=1e-5, maxiter=1000):
 
 
 def vfi_interp(par, tol=1e-5, maxiter=1000):
+    """
+    Solve the household problem using VFI combined with interpolation
+    of the continuation value.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters
+    tol : float, optional
+        Termination tolerance
+    maxiter : int, optional
+        Max. number of iterations
+
+    Returns
+    -------
+    vfun : np.ndarray
+        Array containing the value function
+    pfun_sav : np.ndarray
+        Array containing the savings policy function
+    """
 
     t0 = perf_counter()
 
@@ -256,6 +306,25 @@ def vfi_interp(par, tol=1e-5, maxiter=1000):
 
 
 def f_objective(sav, cah, par, f_vfun):
+    """
+    Objective function for the minimizer.
+
+    Parameters
+    ----------
+    sav : float
+        Current guess for optional savings
+    cah : float
+        Current CAH level
+    par : namedtuple
+        Model parameters
+    f_vfun : callable
+        Function interpolating the continuation value.
+
+    Returns
+    -------
+    float
+        Objective function evaluated at given savings level
+    """
 
     if sav < 0.0 or sav >= cah:
         return np.inf

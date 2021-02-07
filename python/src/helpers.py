@@ -107,14 +107,17 @@ def markov_ergodic_dist(transm, tol=1e-12, maxiter=10000, transpose=True,
     Parameters
     ----------
     transm : numpy.ndarray
-        Markov chain transition matrix
+        Markov chain transition matrix where the element at position (i,j)
+        represents the transition probability from i to j.
     tol : float
         Terminal tolerance on consecutive changes in the ergodic distribution
         if computing via the iterative method (`inverse` = False)
     maxiter : int
         Maximum number of iterations for iterative method.
     transpose : bool
-        If true, the transition matrix `transm` is provided in transposed form.
+        If false, the transition matrix `transm` is assumed to be in transposed
+        form, i.e. each element (i,j) represents the transition probability
+        from state j to state i.
     mu0 : numpy.ndarray
         Optional initial guess for the ergodic distribution if the iterative
         method is used (default: uniform distribution).

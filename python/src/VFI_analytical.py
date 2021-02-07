@@ -1,4 +1,6 @@
 """
+Topics in Macroeconomics (ECON5098), 2020-21
+
 Code to solve VFI for log preferences and no labor income. In this case
 we can derive the analytical solution to compare to our numerical results.
 
@@ -93,6 +95,22 @@ def main():
 
 
 def update_coefs(par, A, B):
+    """
+    Update coefficients of analytical solution from coefficients in
+    current iteration.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters
+    A : float
+    B : float
+
+    Returns
+    -------
+    A_upd : float
+    B_upd : float
+    """
 
     beta, r = par.beta, par.r
 
@@ -106,6 +124,25 @@ def update_coefs(par, A, B):
 
 
 def f_objective(sav, cah, par, f_vfun):
+    """
+    Objective function for minimizer.
+
+    Parameters
+    ----------
+    sav : float
+        Current guess for optimal savings
+    cah : float
+        Current cash-at-hand level
+    par : namedtuple
+        Model parameters
+    f_vfun : callable
+        Function to interpolate continuation value
+
+    Returns
+    -------
+    float
+        Objective evaluated at given savings
+    """
 
     if sav < 0.0 or sav > cah:
         return np.inf
@@ -124,6 +161,26 @@ def f_objective(sav, cah, par, f_vfun):
 
 
 def vfi(par, tol=1e-5, maxiter=1000):
+    """
+    Solves household problem w/o labour income using VFI and compares
+    results to anayltical solution.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters and grids
+    tol : float, optional
+        Termination tolerance
+    maxiter : int, optional
+        Max. number of iterations
+
+    Returns
+    -------
+    vfun : np.ndarray
+        Array containing the value function
+    pfun_sav : np.ndarray
+        Array containing the savings policy function
+    """
 
     N_a = len(par.grid_a)
     vfun = np.log(1.0 + par.r) + np.log(par.grid_a)
@@ -213,6 +270,21 @@ def vfi(par, tol=1e-5, maxiter=1000):
 
 
 def plot_coefs_vfun(par, filename, maxiter=1000, tol=1.0e-6):
+    """
+    Plot the coefficients of the analytical value function for a number
+    of iterations.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters
+    filename : str
+        Output file
+    maxiter : int, optional
+        Max. number of iterations to plot
+    tol : float, optional
+        Termination tolerance for coefficient convergence
+    """
 
     # initial values for n = 1
     A = np.log(1.0 + par.r)
@@ -257,6 +329,21 @@ def plot_coefs_vfun(par, filename, maxiter=1000, tol=1.0e-6):
 
 
 def plot_coefs_pfun(par, filename, maxiter=1000, tol=1.0e-6):
+    """
+    Plot the coefficients of the analytical policy function for a number
+    of iterations.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters
+    filename : str
+        Output file
+    maxiter : int, optional
+        Max. number of iterations to plot
+    tol : float, optional
+        Termination tolerance for coefficient convergence
+    """
 
     # initial VFUN coefficients for n = 1
     A = np.log(1.0 + par.r)

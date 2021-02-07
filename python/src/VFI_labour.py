@@ -1,4 +1,14 @@
 """
+Topics in Macroeconomics (ECON5098), 2020-21
+
+Solve household problem with determinsitic labour income using value function
+iteration (VFI).
+
+This file implements two different solution methods:
+    1.  VFI with grid search, allowing only for savings choices on the
+        asset grid.
+    2.  VFI with interpolation, allowing for savings choices that need not
+        be on the asset grid.
 
 
 Author: Richard Foltyn
@@ -8,13 +18,12 @@ import os.path
 from time import perf_counter
 
 import numpy as np
-from scipy.optimize import minimize, minimize_scalar
+from scipy.optimize import minimize_scalar
 from scipy.interpolate import interp1d
 from collections import namedtuple
 
 import matplotlib.pyplot as plt
 
-import helpers
 from helpers import powerspace
 from env import graphdir
 
@@ -24,7 +33,7 @@ GRID_KWARGS = {'b': True, 'lw': 0.5, 'ls': ':', 'alpha': 0.5, 'color': '#333333'
 
 
 def main():
-    Params = namedtuple('Params', ['gamma', 'beta', 'r', 'a_max', 'N_a', 'y'])
+    Params = namedtuple('Params', ['gamma', 'beta', 'r', 'y', 'grid_a'])
     gamma = 2.0
     beta = 0.96
     r = 0.04
@@ -33,18 +42,19 @@ def main():
     a_max = 50
     N_a = 50
 
-    # store parameters in common structure
-    par = Params(gamma, beta, r, a_max, N_a, 1.0)
-
     # Create asset grid
-    grid_a = powerspace(0.0, par.a_max, par.N_a, 1.3)
+    grid_a = powerspace(0.0, a_max, N_a, 1.3)
+
+    # store parameters in common structure
+    y = 1.0
+    par = Params(gamma, beta, r, y, grid_a)
 
     # Cash-at-hand for each asset grid point
     cah = (1.0 + par.r) * grid_a + par.y
 
     # === Grid search ===
     # solve the HH problem using grid search
-    vfun_grid, pfun_isav_grid = vfi_grid(par, grid_a)
+    vfun_grid, pfun_isav_grid = vfi_grid(par)
     # Savings policy in levels (not indices)
     pfun_sav_grid = grid_a[pfun_isav_grid]
 
@@ -53,18 +63,19 @@ def main():
 
     # === Linear interpolation ===
     # solve the HH problem using linear interpolation
-    vfun_linear, pfun_sav_linear = vfi_interp(par, grid_a, kind='linear')
+    vfun_linear, pfun_sav_linear = vfi_interp(par, kind='linear')
 
     # Recover consumption policy function
     pfun_cons_linear = cah - pfun_sav_linear
 
     # === Spline interpolation ===
-    vfun_cubic, pfun_sav_cubic = vfi_interp(par, grid_a, kind='cubic')
+    vfun_cubic, pfun_sav_cubic = vfi_interp(par, kind='cubic')
 
     # Recover consumption policy function
     pfun_cons_cubic = cah - pfun_sav_cubic
 
     # === Plot results ===
+
     fig, axes = plt.subplots(1, 3, sharex=True, sharey=False, figsize=(9, 3.5))
 
     xlim = (0.0, 5.0)
@@ -115,30 +126,49 @@ def main():
     fig.savefig(fn)
 
 
-def vfi_grid(par, grid_a, tol=1e-5, maxiter=1000):
+def vfi_grid(par, tol=1e-5, maxiter=1000):
+    """
+    Solve the household problem using VFI with grid search.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters and grids
+    tol : float, optional
+        Termination tolerance
+    maxiter : int, optional
+        Max. number of iterations
+
+    Returns
+    -------
+    vfun : np.ndarray
+        Array containing the value function
+    pfun_sav : np.ndarray
+        Array containing the savings policy function
+    """
 
     t0 = perf_counter()
 
-    N_a = len(grid_a)
+    N_a = len(par.grid_a)
     vfun = np.zeros(N_a)
     vfun_upd = np.empty(N_a)
     # index of optimal savings decision
     pfun_isav = np.empty(N_a, dtype=np.uint)
 
     # pre-compute cash at hand for each asset grid point
-    cah = (1 + par.r) * grid_a + par.y
+    cah = (1 + par.r) * par.grid_a + par.y
 
     for it in range(maxiter):
 
-        for ia, a in enumerate(grid_a):
+        for ia, a in enumerate(par.grid_a):
 
             # find all values of a' that are feasible, ie. they satisfy
             # the budget constraint
-            ia_to = np.where(grid_a <= cah[ia])[0]
+            ia_to = np.where(par.grid_a <= cah[ia])[0]
 
             # consumption implied by choice a'
             #   c = (1+r)a + y - a'
-            cons = cah[ia] - grid_a[ia_to]
+            cons = cah[ia] - par.grid_a[ia_to]
 
             # Evaluate "instantaneous" utility
             if par.gamma == 1.0:
@@ -177,11 +207,33 @@ def vfi_grid(par, grid_a, tol=1e-5, maxiter=1000):
     return vfun, pfun_isav
 
 
-def vfi_interp(par, grid_a, kind='linear', tol=1e-5, maxiter=1000):
+def vfi_interp(par, kind='linear', tol=1e-5, maxiter=1000):
+    """
+    Solve the household problem using VFI combined with interpolation
+    of the continuation value.
+
+    Parameters
+    ----------
+    par : namedtuple
+        Model parameters
+    kind : str, optional
+        Type of interpolation to perform on the continuation value.
+    tol : float, optional
+        Termination tolerance
+    maxiter : int, optional
+        Max. number of iterations
+
+    Returns
+    -------
+    vfun : np.ndarray
+        Array containing the value function
+    pfun_sav : np.ndarray
+        Array containing the savings policy function
+    """
 
     t0 = perf_counter()
 
-    N_a = len(grid_a)
+    N_a = len(par.grid_a)
     vfun = np.zeros(N_a)
     vfun_upd = np.empty(N_a)
     # Optimal savings decision
@@ -190,13 +242,13 @@ def vfi_interp(par, grid_a, kind='linear', tol=1e-5, maxiter=1000):
     for it in range(maxiter):
 
         if kind == 'linear':
-            f_vfun = lambda x: np.interp(x, grid_a, vfun)
+            f_vfun = lambda x: np.interp(x, par.grid_a, vfun)
         else:
-            f_vfun = interp1d(grid_a, vfun, kind=kind, bounds_error=False,
+            f_vfun = interp1d(par.grid_a, vfun, kind=kind, bounds_error=False,
                               fill_value='extrapolate', assume_sorted=True,
                               copy=False)
 
-        for ia, a in enumerate(grid_a):
+        for ia, a in enumerate(par.grid_a):
             # Solve maximization problem at given asset level
             # Cash-at-hand at current asset level
             cah = (1.0 + par.r) * a + par.y
@@ -234,6 +286,25 @@ def vfi_interp(par, grid_a, kind='linear', tol=1e-5, maxiter=1000):
 
 
 def f_objective(sav, cah, par, f_vfun):
+    """
+    Objective function for the minimizer.
+
+    Parameters
+    ----------
+    sav : float
+        Current guess for optional savings
+    cah : float
+        Current CAH level
+    par : namedtuple
+        Model parameters
+    f_vfun : callable
+        Function interpolating the continuation value.
+
+    Returns
+    -------
+    float
+        Objective function evaluated at given savings level
+    """
 
     sav = float(sav)
     if sav < 0.0 or sav > cah:
