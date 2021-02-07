@@ -9,7 +9,7 @@ This repository contains the source code for examples covered
 in unit 3.
 
 -   [python/](python/): Examples written in Python
--   [matlab/](matlab/): Examples written in Matlab (TBA later)
+-   [matlab/](matlab/): Examples written in Matlab
 
 ## Slides
 
