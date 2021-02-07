@@ -2,18 +2,13 @@
 function [vfun, pfun_sav] = vfi(par, tol, maxiter)
 % VFI   Solve HH problem using VFI with grid search.
 %
-%   [vfun, pfun_sav] = VFI(par,tol,maxiter) returns value function VFUN
-%                   and policy function PFUN_SAV for next-period assets.
-%   
-%   Arguments:
-%       par             structure containing parameters beta, r and w
-%       tol             termination tolerance
-%       maxiter         max. number of iterations
+%   [VFUN, PFUN_SAV] = VFI(PAR) returns the value function and savings
+%       policy function for the problem parametrised by PAR.
 %
-%   Returns:
-%       vfun            value function for each point on the asset grid.
-%       pfun_sav        policy function for next-period assets for each point 
-%                       on the asset grid.
+%   [VFUN, PFUN_SAV] = VFI(PAR,TOL,MAXITER) returns the value function and 
+%       savings policy function for the problem parametrised by PAR,
+%       using the termination tolerance TOL and a max. number of iterations
+%       given by MAXITER.
 %
 % Note: This implementation is slow, but should be more easy to
 % understand.
@@ -23,11 +18,17 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
     % Set default values for optional arguments
     switch nargin
         case 1
+            % Only PAR passed, assume default TOL and MAXITER
             tol = 1.0e-6;
             maxiter = 1000;
         case 2
+            % Two arguments passed, assume default MAXITER
             maxiter = 1000;
-    endswitch
+        case 3
+            % All arguments present
+        otherwise
+            error('Invalid number of arguments: %d', nargin);
+    end
 
   
     % start timer to calculate how long it takes to run VFI
@@ -37,36 +38,41 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
     % dimension of output arrays, which we define as column vectors
     dims = [N_a 1];
 
-    % Initialize arrays where resulting value and policy functions will be stored.
+    % Initialize arrays where resulting value and policy functions will 
+    % be stored.
+    % Current guess for the value function
     vfun = zeros(dims);
-    % Array used to store updated value function
+    % Updated guess for the value function
     vfun_upd = NaN(dims);
     % Array for policy function for next-period assets
     pfun_sav = NaN(dims);
 
     % Precompute cash-at-hand for each grid point
     % so we don't have to do that repeatedly in each loop iteration.
-    cah = (1.0 + par.r) * par.grid_a + par.w;
+    cah = (1.0 + par.r) * par.grid_a + par.y;
   
     for iter = 1:maxiter
     
         % iterate through asset grid
         for ia = 1:N_a
             
-            % current-period consumption
+            % current-period consumption for all possible savings choices
             cons = cah(ia) - par.grid_a;
 
             % current-period utility
             if par.gamma == 1.0
+                % Log preferences with RRA = 1
                 u = log(cons);
             else
+                % General CRRA
                 u = (cons.^(1.0 - par.gamma) - 1.0) ./ (1.0 - par.gamma);
-            endif
+            end
             
             % compute candidate values for all choices of a'
             vtry = u + par.beta * vfun;
             
-            % logical index of feasible next-period states.
+            % Logical array identifying feasible choices that satisfy the
+            % budget constraint.
             feasible = par.grid_a < cah(ia);
             
             % set infeasible values to -Inf
@@ -91,6 +97,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
         vfun = vfun_upd;
           
         if diff < tol
+            % Desired tolerance level achieved, terminate VFI.
             tend = toc(tstart);
             fprintf("Converged after %d iterations in %4.1f sec.; dV=%.2e\n", ...
                 iter, tend, diff);
