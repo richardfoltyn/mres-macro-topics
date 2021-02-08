@@ -45,7 +45,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
     % Updated guess for the value function
     vfun_upd = NaN(dims);
     % Array for policy function for next-period assets
-    pfun_sav = NaN(dims);
+    pfun_sav = zeros(dims, 'uint32');
 
     % Precompute cash-at-hand for each grid point
     % so we don't have to do that repeatedly in each loop iteration.
