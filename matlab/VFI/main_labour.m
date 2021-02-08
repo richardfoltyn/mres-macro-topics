@@ -26,7 +26,7 @@ par.r = 0.04;               % Interest rate
 par.y = 1;                  % Wage rate
 
 par.a_max = 50;             % Upper bound of asset grid
-par.N_a = 50;             % Number of points on asset grid
+par.N_a = 50;               % Number of points on asset grid
 
 %% Grids
 
@@ -38,12 +38,22 @@ par.grid_a = grid_a';
 
 %% Run value function iteration
 
-[vfun, pfun_sav] = vfi(par);
+% Termination tolerance for VFI
+tol = 1.0e-6;
+% Max. number of iterations
+maxiter = 1000;
+
+% Solve problem using grid search
+[vfun, pfun_ia] = vfi(par, tol, maxiter);
+% Optimal next-period asset level (savings)
+a_opt = par.grid_a(pfun_ia);
+
+% Solve problem using interpolation. Admissible interpolation methods
+% are those accepted by the interp1() function, e.g. 'linear', 'cubic',
+% 'pchip', 'spline', ...
+% [vfun, a_opt] = vfi_interp(par, tol, maxiter, 'pchip');
 
 %% Plot value and policy functions for savings and consumption
-
-% Optimal next-period asset level (savings)
-a_opt = par.grid_a(pfun_sav);
 
 % Cash-at-hand at beginning of period
 cah = (1.0 + par.r) * par.grid_a + par.y;
@@ -106,10 +116,17 @@ mkdir(graphdir)
 % Custom function to remove excessive margins around subplots
 papersize = [8.5 3.0];
 layout = [1 3];
-tightlayout(gcf, layout, papersize);
+tightlayout(gcf, layout, 0.02, papersize);
 
 % Store graphs as PDF, add number of asset grid points to file name.
-fn = sprintf('VFI_labour_N%d.pdf', par.N_a);
+if exist('pfun_ia', 'var') ~= 0
+    % Array pfun_ia is defined, so solution was obtained from grid search
+    fn = sprintf('VFI_labour_N%d.pdf', par.N_a);
+else
+    % Solution was obtained using interpolation, append suffix
+    fn = sprintf('VFI_labour_N%d_interp.pdf', par.N_a);
+end
+
 fn = fullfile(graphdir, fn);
 saveas(gcf, fn)
 
