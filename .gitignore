@@ -29,6 +29,7 @@ cache/
 *.sav
 *.bcf
 *.run.xml
+.directory
 
 # Compiled Python bytecode
 *.py[cod]
