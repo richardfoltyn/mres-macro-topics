@@ -10,7 +10,14 @@
     -   [main_labour_risk.m](VFI/main_labour_risk.m): Solves the household problem
         with persistent labour income shocks and plots the solution.
         -   [vfi_risk.m](VFI/vfi_risk.m): VFI implementation with risky labour income.
--   `EGM`: Solvers using the endogenous grid-point method (TBA).
+-   `EGM`: Solvers using the endogenous grid-point method.
+    -   [main_labour.m](EGM/main_labour.m): Solves the household problem with constant labour income
+        and plots the solution.
+    -   [main_labour_risk.m](EGM/main_labour_risk.m): Solves the household problem
+        with persistent labour income shocks and plots the solution.
+    -   [egm_IH.m](EGM/egm_IH.m): EGM implementation to solve infinite-horizon
+        houseuhold problems with and without labour income risk.
+
 -   `lib`: Helper routines used throughout the code. 
 -   `graphs`: Figures generated from code in the `VFI` and `EGM` folders.
 
