@@ -25,9 +25,9 @@ function tightlayout(hfig,layout,add_margins,papersize)
             hfig = gcf();
         case 1
             layout = [1 1];
-            add_margins = DEFAULT_ADD_MARGINS
+            add_margins = DEFAULT_ADD_MARGINS;
         case 2
-            add_margins = DEFAULT_ADD_MARGINS
+            add_margins = DEFAULT_ADD_MARGINS;
         case 3
             papersize = [];
         case 4
@@ -35,6 +35,7 @@ function tightlayout(hfig,layout,add_margins,papersize)
         otherwise
             error('Unsupported number of arguments: %d', nargin);
     end
+   
     
     % Replicate scalar margin across all four sides
     if isscalar(add_margins)
@@ -62,13 +63,32 @@ function tightlayout(hfig,layout,add_margins,papersize)
             set(hax, 'XLimSpec', 'Tight', 'YLimSpec', 'Tight');
         end
         inset = get(hax, 'TightInset');
+        outer = get(hax, 'OuterPosition');
+
+        inner = get(hax, 'Position');
         
+        m = [inner(1) - outer(1) - inset(1), ...
+             inner(2) - outer(2) - inset(2), ...
+             outer(1) + outer(3) - inner(1) - inner(3) - inset(3), ...
+             outer(2) + outer(4) - inner(2) - inner(4) - inset(4)];
+             
+        % inset values for bottom/top are clearly wrong since they are 
+        % reported to be zero even in the presence of axes labels.
+        % Replace zero values with the margin between outer and inner position.
+        if inset(2) == 0.0
+            inset(2) = m(2);
+        end
+        
+        if inset(4) == 0.0
+            inset(4) = m(4);
+        end
+         
         margins = max(margins, inset);
     end
     
     % short-hand to have less cluttered expressions
     am = add_margins;
-    
+
     % Apply position to each subplot
     for k = 0:naxes-1
         i = floor(k/ncol) + 1;
