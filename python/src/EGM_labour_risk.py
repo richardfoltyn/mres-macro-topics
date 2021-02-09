@@ -1,4 +1,12 @@
 """
+Topics in Macroeconomics (ECON5098), 2020-21
+
+Solve household problem with risky labour income using the endogenous
+grid-point method (EGM).
+
+Note: This implementation uses the same grid for exogenous savings
+    and beginning-of-period assets. This is not required, but spares
+    is unnecessary interpolation steps.
 
 Author: Richard Foltyn
 """
@@ -10,7 +18,6 @@ import numpy as np
 from collections import namedtuple
 
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 
 from helpers import powerspace
 from env import graphdir
@@ -21,7 +28,7 @@ GRID_KWARGS = {'b': True, 'lw': 0.5, 'ls': ':', 'alpha': 0.5, 'color': '#333333'
 
 
 def main():
-    attrs = ['gamma', 'beta', 'r', 'grid_a', 'grid_sav', 'grid_y', 'tm_y']
+    attrs = ['gamma', 'beta', 'r', 'grid_a', 'grid_y', 'tm_y']
     Params = namedtuple('Params', attrs)
     gamma = 2.0
     beta = 0.96
@@ -39,10 +46,6 @@ def main():
     # Create asset grid
     grid_a = powerspace(0.0, a_max, N_a, 1.3)
 
-    # Create exogenous savings grid
-    N_sav = 1003
-    grid_sav = powerspace(0.0, a_max, N_sav, 1.3)
-
     # Discretised labour income process
     states, tm_y = rouwenhorst(N_y, mu=0.0, rho=rho, sigma=sigma)
     # Ergodic distribution of labour income
@@ -53,7 +56,7 @@ def main():
     grid_y /= np.dot(edist, grid_y)
 
     # store parameters in common structure
-    par = Params(gamma, beta, r, grid_a, grid_sav, grid_y, tm_y)
+    par = Params(gamma, beta, r, grid_a, grid_y, tm_y)
 
     # === EGM ===
 
@@ -93,8 +96,8 @@ def main():
 
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=False, figsize=(6.5, 3.5))
 
-    imax = np.where(par.grid_sav > xlim[-1])[0][0] + 1
-    xvalues = grid_sav[:imax]
+    imax = np.where(par.grid_a > xlim[-1])[0][0] + 1
+    xvalues = par.grid_a[:imax]
 
     # Create dotted lines as this x-value
     xat = 2.0
@@ -103,11 +106,11 @@ def main():
 
     for iy in range(N_y):
         axes[0].plot(xvalues, cons_sav[iy, :imax], c=colours[iy], **kw)
-        yat = np.interp(xat, par.grid_sav, cons_sav[iy])
+        yat = np.interp(xat, par.grid_a, cons_sav[iy])
         axes[0].axhline(yat, **kwline)
 
         axes[1].plot(xvalues, assets_sav[iy, :imax], c=colours[iy], **kw)
-        yat = np.interp(xat, par.grid_sav, assets_sav[iy])
+        yat = np.interp(xat, par.grid_a, assets_sav[iy])
         axes[1].axhline(yat, **kwline)
 
     axes[0].set_title(r'Consumption $c$')
@@ -132,19 +135,31 @@ def egm_IH(par, tol=1.0e-8, maxiter=10000):
     Parameters
     ----------
     par : namedtuple
+        Model parameters
+    tol : float, optional
+        Termination tolerance
+    maxiter : int, optional
+        Max. number of iterations
 
     Returns
     -------
-
+    pfun_cons : np.ndarray
+        Consumption policy function defined on beginning-of-period asset grid.
+    pfun_sav : np.ndarray
+        Savings policy function defined on beginning-of-period asset grid.
+    assets_sav : np.ndarray
+        Implied beginning-of-period assets defined on exogenous savings grid.
+    cons_sav : np.ndarray
+        Optimal consumption defined on exogenous savings grid.
     """
 
     t0 = perf_counter()
 
-    N_a, N_y, N_sav = len(par.grid_a), len(par.grid_y), len(par.grid_sav)
-    shape = (N_y, N_sav)
+    N_a, N_y = len(par.grid_a), len(par.grid_y)
+    shape = (N_y, N_a)
 
-    # Cash-at-hand at every savings level
-    cah = (1.0 + par.r) * par.grid_sav[None] + par.grid_y[:, None]
+    # Cash-at-hand at every asset/savings level
+    cah = (1.0 + par.r) * par.grid_a[None] + par.grid_y[:, None]
 
     # Initial guess for consumption policy function
     pfun_cons = np.copy(cah)
@@ -159,44 +174,48 @@ def egm_IH(par, tol=1.0e-8, maxiter=10000):
     # Extract parameters from par object
     beta, gamma, r = par.beta, par.gamma, par.r
 
-    # Save min. assets points at which HH starts to save
-    amin = np.zeros(N_y)
-
     for it in range(maxiter):
 
+        # Iterate over all labour income states
         for iy, y in enumerate(par.grid_y):
 
             # Expected marginal utility tomorrow
             mu = np.dot(par.tm_y[iy], pfun_cons**(-gamma))
-            # Compute RHS of Euler eq.
+            # Compute right-hand side of Euler equation (EE)
             ee_rhs = beta * (1.0 + r) * mu
 
             # Invert EE to get consumption as a function of savings today
             cons_sav[iy] = ee_rhs**(-1.0/gamma)
 
             # Use budget constraint to get beginning-of-period assets
-            assets_sav[iy] = (cons_sav[iy] + par.grid_sav - y) / (1.0 + r)
+            assets_sav[iy] = (cons_sav[iy] + par.grid_a - y) / (1.0 + r)
 
             # Interpolate back onto exogenous savings grid
-            pfun_cons_upd[iy] = np.interp(par.grid_sav, assets_sav[iy], cons_sav[iy])
+            # Today's savings become next-period's assets, so this
+            # interpolation works.
+            pfun_cons_upd[iy] = np.interp(par.grid_a, assets_sav[iy], cons_sav[iy])
 
             # Fix consumption in region where HH does not save
-            amin[iy] = assets_sav[iy, 0]
-            idx = np.where(par.grid_sav <= amin[iy])[0]
+            amin = assets_sav[iy, 0]
+            idx = np.where(par.grid_a <= amin)[0]
             # HH consumes entire cash-at-hand
             pfun_cons_upd[iy, idx] = cah[iy, idx]
 
         # Make sure that consumption policy satisfies constraints
         assert np.all(pfun_cons_upd >= 0.0) and np.all(pfun_cons_upd <= cah)
 
+        # Compute max. absolute difference to policy function from previous
+        # iteration.
         diff = np.max(np.abs(pfun_cons - pfun_cons_upd))
 
         # switch references to policy functions for next iteration
         pfun_cons, pfun_cons_upd = pfun_cons_upd, pfun_cons
 
         if diff < tol:
+            # Convergence achieved, exit loop
             td = perf_counter() - t0
-            msg = f'EGM: Converged after {it:d} iterations ({td:.1f} sec.): d(c)={diff:4.2e}'
+            msg = f'EGM: Converged after {it:d} iterations ({td:.1f} sec.): ' \
+                  f'd(c)={diff:4.2e}'
             print(msg)
             break
         elif it == 1 or it % 10 == 0:
@@ -206,21 +225,9 @@ def egm_IH(par, tol=1.0e-8, maxiter=10000):
         msg = f'Did not converge in {it:d} iterations'
         print(msg)
 
-    # Interpolate onto exogenous beginning-of-period asset grid
-    # Cash-at-hand grid implied by asset grid
-    cah = (1.0 + r) * par.grid_a[None] + par.grid_y[:, None]
+    pfun_sav = cah - pfun_cons
 
-    pfun_cons_assets = np.empty((N_y, N_a))
-
-    for iy in range(N_y):
-        pfun_cons_assets[iy] = np.interp(par.grid_a, par.grid_sav, pfun_cons[iy])
-        idx = np.where(par.grid_a <= amin[iy])[0]
-        pfun_cons_assets[iy,idx] = cah[iy, idx]
-
-    # Compute implied savings policy function
-    pfun_sav = cah - pfun_cons_assets
-
-    return pfun_cons_assets, pfun_sav, assets_sav, cons_sav
+    return pfun_cons, pfun_sav, assets_sav, cons_sav
 
 
 if __name__ == '__main__':
