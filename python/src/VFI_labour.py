@@ -316,7 +316,7 @@ def f_objective(sav, cah, par, f_vfun):
     # Continuation value interpolated onto asset grid
     vcont = f_vfun(sav)
 
-    # evaluate objective: log(c) + beta * V(a')
+    # current-period utility
     if cons <= 0.0:
         u = - np.inf
     else:
