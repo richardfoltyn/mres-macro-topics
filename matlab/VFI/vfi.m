@@ -56,7 +56,8 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
         % iterate through asset grid
         for ia = 1:N_a
             
-            % current-period consumption for all possible savings choices
+            % current-period consumption for all possible savings choices,
+            % irrespective of whether they are feasible or not.
             cons = cah(ia) - par.grid_a;
 
             % current-period utility
@@ -65,7 +66,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
                 u = log(cons);
             else
                 % General CRRA
-                u = (cons.^(1.0 - par.gamma) - 1.0) ./ (1.0 - par.gamma);
+                u = (cons.^(1.0 - par.gamma) - 1.0) / (1.0 - par.gamma);
             end
             
             % compute candidate values for all choices of a'
@@ -99,7 +100,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
         if diff < tol
             % Desired tolerance level achieved, terminate VFI.
             tend = toc(tstart);
-            fprintf("Converged after %d iterations in %4.1f sec.; dV=%.2e\n", ...
+            fprintf("VFI: Converged after %d iterations in %4.1f sec.; dV=%.2e\n", ...
                 iter, tend, diff);
             return;
         else
@@ -111,6 +112,6 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
         end
     end
   
-    warning("Exceeded max number of iterations; dV=%.2e\n", diff);
+    warning("VFI: Exceeded max number of iterations; dV=%.2e\n", diff);
 
 end

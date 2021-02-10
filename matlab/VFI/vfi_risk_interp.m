@@ -140,7 +140,7 @@ function fval = objective(sav, cah, par, vcont, method)
         u = log(cons);
     else
         % General CRRA
-        u = (cons.^(1.0 - par.gamma) - 1.0) ./ (1.0 - par.gamma);
+        u = (cons^(1.0 - par.gamma) - 1.0) / (1.0 - par.gamma);
     end
 
     % Objective evaluated at current savings level

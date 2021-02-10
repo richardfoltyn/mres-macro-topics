@@ -23,7 +23,7 @@ close all
 par.beta = 0.96;            % Discount factor
 par.gamma = 2.0;            % Relative risk aversion (RRA)
 par.r = 0.04;               % Interest rate
-par.y = 1;                  % Wage rate
+par.y = 1;                  % Constant labour income
 
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid

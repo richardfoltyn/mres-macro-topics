@@ -89,7 +89,7 @@ function [vfun, pfun_sav] = vfi_interp(par, tol, maxiter, method)
         if diff < tol
             % Desired tolerance level achieved, terminate VFI.
             tend = toc(tstart);
-            fprintf("Converged after %d iterations in %4.1f sec.; dV=%.2e\n", ...
+            fprintf("VFI: Converged after %d iterations in %4.1f sec.; dV=%.2e\n", ...
                 iter, tend, diff);
             return;
         else
@@ -101,7 +101,7 @@ function [vfun, pfun_sav] = vfi_interp(par, tol, maxiter, method)
         end
     end
   
-    warning("Exceeded max number of iterations; dV=%.2e\n", diff);
+    warning("VFI: Exceeded max number of iterations; dV=%.2e\n", diff);
 
 end
 
@@ -133,7 +133,7 @@ function fval = objective(sav, cah, par, vcont, method)
         u = log(cons);
     else
         % General CRRA
-        u = (cons.^(1.0 - par.gamma) - 1.0) ./ (1.0 - par.gamma);
+        u = (cons^(1.0 - par.gamma) - 1.0) / (1.0 - par.gamma);
     end
 
     % Objective evaluated at current savings level
