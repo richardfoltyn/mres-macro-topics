@@ -100,7 +100,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
         if diff < tol
             % Desired tolerance level achieved, terminate VFI.
             tend = toc(tstart);
-            fprintf("VFI: Converged after %d iterations in %4.1f sec.; dV=%.2e\n", ...
+            fprintf("VFI: Converged after %d iterations in %.2f sec.; dV=%.2e\n", ...
                 iter, tend, diff);
             return;
         else

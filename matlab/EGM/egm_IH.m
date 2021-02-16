@@ -114,7 +114,7 @@ function [pfun_cons, pfun_sav] = egm_IH(par, tol, maxiter)
         if diff < tol
             % Desired tolerance level achieved, terminate iteration.
             tend = toc(tstart);
-            fprintf("EGM: Converged after %d iterations in %4.1f sec.; dC=%.2e\n", ...
+            fprintf("EGM: Converged after %d iterations in %.2f sec.; dC=%.2e\n", ...
                 iter, tend, diff);
             return;
         else
