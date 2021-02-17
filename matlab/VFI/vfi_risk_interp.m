@@ -2,9 +2,6 @@
 function [vfun, pfun_sav] = vfi_risk_interp(par, tol, maxiter, method)
 % VFI   Solve HH problem with labour income risk using VFI with grid search.
 %
-%   [VFUN, PFUN_SAV] = VFI_RISK_INTERP(PAR) returns the value function and savings
-%       policy function for the problem parametrised by PAR.
-%
 %   [VFUN, PFUN_SAV] = VFI_RISK_INTERP(PAR,TOL,MAXITER) returns the value function and 
 %       savings policy function for the problem parametrised by PAR,
 %       using the termination tolerance TOL and a max. number of iterations
@@ -19,27 +16,10 @@ function [vfun, pfun_sav] = vfi_risk_interp(par, tol, maxiter, method)
 % Author: Richard Foltyn
 
     % Set default values for optional arguments
-    switch nargin
-        case 1
-            % Only PAR passed, assume default TOL and MAXITER
-            tol = 1.0e-6;
-            maxiter = 1000;
-            % default interpolation method
-            method = 'linear';
-        case 2
-            % Two arguments passed, assume default MAXITER
-            maxiter = 1000;
-            % default interpolation method
-            method = 'linear';
-        case 3
-            % default interpolation method
-            method = 'linear';
-        case 4
-            % All arguments present
-        otherwise
-            error('Invalid number of arguments: %d', nargin);
+    if nargin == 3
+        % default interpolation method if 4th argument is not present
+        method = 'linear';
     end
-
   
     % start timer to calculate how long it takes to run VFI
     tstart = tic;
@@ -74,7 +54,13 @@ function [vfun, pfun_sav] = vfi_risk_interp(par, tol, maxiter, method)
                 % Cash-at-hand at current grid point
                 cah = (1.0 + par.r) * assets + par.grid_y(iy);
 
-                % Restrict maximisation to feasible interval
+                % Use Matlab's function FMINBND to run minimisation on feasible
+                % interval [0, cah].
+                % FMINBND expects an objective function that takes exactly one
+                % argument, but we need to pass additional arguments.
+                % We use an anonymous function created using 
+                %   @(x) objective(x, ...)
+                % to pass additional arguments.
                 [sav, fval] = fminbnd(@(x) objective(x, cah, par, vcont, method), 0.0, cah);
 
                 % value function is negative of minimizer objective

@@ -1,9 +1,6 @@
 
 function [vfun, pfun_sav] = vfi_risk(par, tol, maxiter)
-% VFI   Solve HH problem with labour income risk using VFI with grid search.
-%
-%   [VFUN, PFUN_SAV] = VFI_RISK(PAR) returns the value function and savings
-%       policy function for the problem parametrised by PAR.
+% VFI_RISK   Solve HH problem with labour income risk using VFI with grid search.
 %
 %   [VFUN, PFUN_SAV] = VFI_RISK(PAR,TOL,MAXITER) returns the value function and 
 %       savings policy function for the problem parametrised by PAR,
@@ -14,22 +11,6 @@ function [vfun, pfun_sav] = vfi_risk(par, tol, maxiter)
 % understand.
 %
 % Author: Richard Foltyn
-
-    % Set default values for optional arguments
-    switch nargin
-        case 1
-            % Only PAR passed, assume default TOL and MAXITER
-            tol = 1.0e-6;
-            maxiter = 1000;
-        case 2
-            % Two arguments passed, assume default MAXITER
-            maxiter = 1000;
-        case 3
-            % All arguments present
-        otherwise
-            error('Invalid number of arguments: %d', nargin);
-    end
-
   
     % start timer to calculate how long it takes to run VFI
     tstart = tic;
