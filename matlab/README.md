@@ -13,10 +13,11 @@
 -   `EGM`: Solvers using the endogenous grid-point method.
     -   [main_labour.m](EGM/main_labour.m): Solves the household problem with constant labour income
         and plots the solution.
+        -   [egm_IH.m](EGM/egm_IH.m): EGM implementation (infinite horizon)
     -   [main_labour_risk.m](EGM/main_labour_risk.m): Solves the household problem
         with persistent labour income shocks and plots the solution.
-    -   [egm_IH.m](EGM/egm_IH.m): EGM implementation to solve infinite-horizon
-        houseuhold problems with and without labour income risk.
+        -   [egm_IH_risk.m](EGM/egm_IH_risk.m): EGM implementation with risky labour (infinite horizon)
+    
 
 -   `lib`: Helper routines used throughout the code. 
 -   `graphs`: Figures generated from code in the `VFI` and `EGM` folders.
