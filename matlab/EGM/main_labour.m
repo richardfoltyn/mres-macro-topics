@@ -10,7 +10,7 @@
 addpath('../lib')
 
 % Always clear workspace at the beginning to make sure that we do not have
-% any manually created variables in work space that might break our code.
+% any manually created variables in workspace that might break our code.
 clearvars
 
 % close all figures
@@ -48,7 +48,9 @@ tol = 1.0e-6;
 % Max. number of iterations
 maxiter = 1000;
 
-% Solve problem using infinite-horizon EGM algorithm
+% Solve problem using infinite-horizon EGM algorithm.
+% Function returns consumption and savings policy functions defined on
+% asset grid.
 [cons_opt, a_opt] = egm_IH(par, tol, maxiter);
 
 %% Plot policy functions for savings and consumption
