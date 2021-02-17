@@ -25,6 +25,7 @@ par.gamma = 2.0;            % Relative risk aversion (RRA)
 par.r = 0.04;               % Interest rate
 par.y = 1;                  % Constant labour income
 
+% Asset grid parameters
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 50;               % Number of points on asset grid
 

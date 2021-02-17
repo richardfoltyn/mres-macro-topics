@@ -24,6 +24,7 @@ par.beta = 0.96;            % Discount factor
 par.gamma = 2.0;            % Relative risk aversion (RRA)
 par.r = 0.04;               % Interest rate
 
+% Asset grid parameters
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid
 
@@ -58,12 +59,12 @@ par.tm_y = tm_y;
 
 %% Run EGM
 
-% Termination tolerance for VFI
+% Termination tolerance for infinite-horizon EGM
 tol = 1.0e-6;
 % Max. number of iterations
 maxiter = 1000;
 
-% Solve problem using grid search
+% Solve problem using infinite-horizon EGM algorithm
 [cons_opt, a_opt] = egm_IH(par, tol, maxiter);
 
 %% Plot policy functions for savings and consumption

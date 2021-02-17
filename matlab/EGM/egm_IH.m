@@ -14,6 +14,9 @@ function [pfun_cons, pfun_sav] = egm_IH(par, tol, maxiter)
 %       and beginning-of-period assets. This is not required, but spares
 %       is unnecessary interpolation steps.
 %
+%   Note: This implementation can solve problems with both constant and
+%       risky labour income.
+%
 % Author: Richard Foltyn
 
     % Set default values for optional arguments
@@ -36,33 +39,37 @@ function [pfun_cons, pfun_sav] = egm_IH(par, tol, maxiter)
     tstart = tic;
     
     % Check whether we have a problem with income risk. In this case we 
-    % assume that the field GRID_Y and TM_Y are fields in the structure
-    % PAR and store the states and transition matrix of income shocks.
+    % assume that the arrays GRID_Y and TM_Y are fields in the structure
+    % PAR and contain the states and transition matrix of income shocks.
     % If these fields are not present, we assume that income is
-    % deterministic and equal to 1.0 each period.
+    % deterministic and equal to PAR.Y each period.
     
     if isfield(par, 'grid_y') && isfield(par, 'tm_y')
         grid_y = par.grid_y;
         tm_y = par.tm_y;
         N_y = length(par.grid_y);
     else
-        grid_y = ones(1,1);     % degenerate income state vector with 1 element
-        tm_y = ones(1,1);       % degenerate 1-by-1 transition matrix
+        % degenerate income state vector with 1 element
+        grid_y = ones(1,1) * par.y;     
+        % degenerate 1-by-1 transition matrix
+        tm_y = ones(1,1);       
         N_y = 1;
     end
 
     N_a = length(par.grid_a);
+    % Dimensions of arrays used below
+    dims = [N_a N_y];
 
     % Precompute cash-at-hand for each asset/savings grid point
     % so we don't have to do that repeatedly in each loop iteration.
     cah = (1.0 + par.r) * par.grid_a + grid_y';
     
-    % Initialize arrays to hold optional consumption as a function of 
+    % Initialise arrays to hold optional consumption as a function of 
     % savings brought over from previous period.
     
     % Initial guess for consumption policy: consume entire cash-at-hand
     pfun_cons = cah;
-    pfun_cons_upd = NaN([N_a, N_y]);
+    pfun_cons_upd = NaN(dims);
   
     for iter = 1:maxiter
     
@@ -84,7 +91,7 @@ function [pfun_cons, pfun_sav] = egm_IH(par, tol, maxiter)
             % as a function of today's savings.
             assets_sav = (cons_sav + par.grid_a - grid_y(iy)) / (1.0 + par.r);
 
-            % Interpolate results back onto exogeneous asset/savings grid.
+            % Interpolate results back onto exogenous asset/savings grid.
             pfun_cons_upd(:,iy) = interp1(assets_sav, cons_sav, ...
                 par.grid_a, 'linear', 'extrap');
 

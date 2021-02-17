@@ -25,10 +25,15 @@ par.gamma = 2.0;            % Relative risk aversion (RRA)
 par.r = 0.04;               % Interest rate
 par.y = 1;                  % Constant labour income
 
+% Asset and savings grid parameters
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid
 
 %% Grids
+
+% Note: we use the same grid for assets and savings, since
+%   savings = a'
+%   a' becomes the initial asset position next period.
 
 % Asset grid: allocate more points towards the left end, i.e. at lower asset 
 % levels.
@@ -38,12 +43,12 @@ par.grid_a = grid_a';
 
 %% Run EGM
 
-% Termination tolerance for VFI
+% Termination tolerance for infinite-horizon EGM
 tol = 1.0e-6;
 % Max. number of iterations
 maxiter = 1000;
 
-% Solve problem using grid search
+% Solve problem using infinite-horizon EGM algorithm
 [cons_opt, a_opt] = egm_IH(par, tol, maxiter);
 
 %% Plot policy functions for savings and consumption
