@@ -66,7 +66,14 @@ tol = 1.0e-6;
 maxiter = 1000;
 
 % Solve problem using grid search
-[vfun, pfun_ia] = vfi_risk(par, tol, maxiter);
+% [vfun, pfun_ia] = vfi_risk(par, tol, maxiter);
+
+% Run VFI with Howard's improvement accelaration algorithm instead.
+% This is an extension of plain VFI. You can ignore this algorithm
+% initially.
+% naccel = 10;
+% [vfun, pfun_ia] = vfi_risk_howard(par, tol, maxiter,naccel);
+
 % Optimal next-period asset level (savings)
 a_opt = par.grid_a(pfun_ia);
 

@@ -10,6 +10,9 @@
     -   [main_labour_risk.m](VFI/main_labour_risk.m): Solves the household problem
         with persistent labour income shocks and plots the solution.
         -   [vfi_risk.m](VFI/vfi_risk.m): VFI implementation with risky labour income.
+        -   [vfi_risk_howard.m](VFI/vfi_risk_howard.m): VFI implementation with
+            risky labour income. This is an extension of plain VFI that uses
+            Howard's improvement algorithm to accelerate convergence. 
 -   `EGM`: Solvers using the endogenous grid-point method.
     -   [main_labour.m](EGM/main_labour.m): Solves the household problem with constant labour income
         and plots the solution.
