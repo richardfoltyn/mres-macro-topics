@@ -68,7 +68,7 @@ maxiter = 1000;
 % Solve problem using grid search
 % [vfun, pfun_ia] = vfi_risk(par, tol, maxiter);
 
-% Run VFI with Howard's improvement accelaration algorithm instead.
+% Run VFI with Howard's improvement acceleration algorithm instead.
 % This is an extension of plain VFI. You can ignore this algorithm
 % initially.
 % naccel = 10;
