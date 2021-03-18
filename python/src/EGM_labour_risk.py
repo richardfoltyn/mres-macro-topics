@@ -66,7 +66,10 @@ def main():
     # === Plot results ===
 
     xlim = (0.0, 5.0)
-    imax = np.where(grid_a > xlim[-1])[0][0] + 1
+    if xlim[-1] < grid_a[-1]:
+        imax = np.where(grid_a > xlim[-1])[0][0] + 1
+    else:
+        imax = len(grid_a)
     xvalues = grid_a[:imax]
 
     colours = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3','#ff7f00']
@@ -126,6 +129,55 @@ def main():
     fig.tight_layout()
     fn = os.path.join(graphdir, f'EGM_labour_risk_exog_N{N_a}.pdf')
     fig.savefig(fn)
+
+    # === Compare to solution with purely transitory shocks ===
+
+    # Change transition matrix to be identical to the ergodic distr.
+    tm_y = np.tile(edist[None], reps=(N_y, 1))
+
+    # store parameters in common structure
+    par = Params(gamma, beta, r, grid_a, grid_y, tm_y)
+
+    # Solve HH problem using EGM
+    pfun_cons2, pfun_sav2, *rest = egm_IH(par)
+
+    # === Plot results ===
+
+    xlim = (0.0, 5.0)
+    if xlim[-1] < grid_a[-1]:
+        imax = np.where(grid_a > xlim[-1])[0][0] + 1
+    else:
+        imax = len(grid_a)
+    xvalues = grid_a[:imax]
+
+    colours = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3','#ff7f00']
+    kw = {'linewidth': 1.5, 'linestyle': '-', 'alpha': 0.7}
+    kw2 = {'linewidth': 2.0, 'linestyle': '--', 'alpha': 0.8}
+
+    fig, axes = plt.subplots(1, 2, sharex=True, sharey=False, figsize=(6.5, 3.5))
+
+    for iy in range(N_y):
+        axes[0].plot(xvalues, pfun_sav[iy, :imax], c=colours[iy], **kw)
+        axes[1].plot(xvalues, pfun_cons[iy, :imax], c=colours[iy], **kw)
+
+        # Policy functions with transitory shocks
+        axes[0].plot(xvalues, pfun_sav2[iy, :imax], c=colours[iy], **kw2)
+        axes[1].plot(xvalues, pfun_cons2[iy, :imax], c=colours[iy], **kw2)
+
+    axes[0].set_title(r'Savings $a^{\prime}$')
+    axes[0].set_xlabel('Assets')
+    axes[0].set_xlim(xlim)
+    axes[0].grid(**GRID_KWARGS)
+
+    axes[1].set_title(r'Consumption $c$')
+    axes[1].set_xlabel('Assets')
+    axes[1].set_xlim(xlim)
+    axes[1].grid(**GRID_KWARGS)
+
+    fig.tight_layout()
+    fn = os.path.join(graphdir, f'EGM_labour_trans_risk_N{N_a}.pdf')
+    fig.savefig(fn)
+
 
 
 def egm_IH(par, tol=1.0e-8, maxiter=10000):
