@@ -20,8 +20,8 @@
     -   [main_labour_risk.m](EGM/main_labour_risk.m): Solves the household problem
         with persistent labour income shocks and plots the solution.
         -   [egm_IH_risk.m](EGM/egm_IH_risk.m): EGM implementation with risky labour (infinite horizon)
-    
-
+    -   [compare.mn](EGM/compare.m): Create plots to compute household
+            policy functions for two different parametrisations.
 -   `lib`: Helper routines used throughout the code. 
 -   `graphs`: Figures generated from code in the `VFI` and `EGM` folders.
 
