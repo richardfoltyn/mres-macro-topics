@@ -1,11 +1,17 @@
 
-function [vfun, pfun_sav] = vfi(par, tol, maxiter)
+function [vfun, pfun_ia] = vfi(par, tol, maxiter)
 % VFI   Solve HH problem using VFI with grid search.
 %
-%   [VFUN, PFUN_SAV] = VFI(PAR,TOL,MAXITER) returns the value function and 
+%   [VFUN, PFUN_IA] = VFI(PAR,TOL,MAXITER) returns the value function and 
 %       savings policy function for the problem parametrised by PAR,
 %       using the termination tolerance TOL and a max. number of iterations
 %       given by MAXITER.
+%
+% Return values:
+%   vfun        Array containing the value function defined on the
+%               asset grid.
+%   pfun_ia     Array containing the indices of optimal assets next
+%               period.
 %
 % Note: This implementation is slow, but should be more easy to
 % understand.
@@ -25,8 +31,9 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
     vfun = zeros(dims);
     % Updated guess for the value function
     vfun_upd = NaN(dims);
-    % Array for policy function for next-period assets
-    pfun_sav = zeros(dims, 'uint32');
+    % Array for index for next-period assets;
+    % The type uint32 declares this to be 32bit integer array.
+    pfun_ia = zeros(dims, 'uint32');
 
     % Precompute cash-at-hand for each grid point
     % so we don't have to do that repeatedly in each loop iteration.
@@ -50,7 +57,8 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
                 u = (cons.^(1.0 - par.gamma) - 1.0) / (1.0 - par.gamma);
             end
             
-            % compute candidate values for all choices of a'
+            % compute candidate values for all choices of a':
+            % V(a) = u(c) + beta * V(a')
             vtry = u + par.beta * vfun;
             
             % Logical array identifying feasible choices that satisfy the
@@ -64,7 +72,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
             [v_opt, imax] = max(vtry);
 
             % store optimal value as our policy choice for this iteration
-            pfun_sav(ia) = imax;
+            pfun_ia(ia) = imax;
 
             % Store optimal value in value function array
             vfun_upd(ia) = v_opt;
@@ -73,7 +81,7 @@ function [vfun, pfun_sav] = vfi(par, tol, maxiter)
         % check whether we have convergence, ie. difference to last iteration is
         % below desired tolerance level. If this is the case, exit the function,
         % otherwise proceed with next iteration.
-        diff = max(max(abs(vfun-vfun_upd)));
+        diff = max(abs(vfun-vfun_upd));
         
         % update using newly computed value function
         vfun = vfun_upd;

@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2020-21
+% Topics in Macroeconomics (ECON5098), 2021-22
 %
 % Main file to run value function iteration (VFI) for problem with 
 % deterministic labour income and plot results.
@@ -22,18 +22,20 @@ close all
 
 par.beta = 0.96;            % Discount factor
 par.gamma = 2.0;            % Relative risk aversion (RRA)
-par.r = 0.04;               % Interest rate
+par.r = 0.04;               % Interest rate (taken as given in part. eq.)
 par.y = 1;                  % Constant labour income
 
 % Asset grid parameters
+par.a_min = 0.0;            % Lower bound of asset grid
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 50;               % Number of points on asset grid
 
 %% Grids
 
-% Asset grid: allocate more points towards the left end, i.e. at lower asset 
-% levels.
-grid_a = powerspace(0.0, par.a_max, par.N_a, 1.3);
+% Asset grid: allocate more points towards the left end, i.e., at lower 
+% asset levels.
+% We use the convenience function powerspace() from the lib/ folder.
+grid_a = powerspace(par.a_min, par.a_max, par.N_a, 1.3);
 % Store asset grid as column vector!
 par.grid_a = grid_a';
 
@@ -46,7 +48,8 @@ maxiter = 1000;
 
 % Solve problem using grid search
 [vfun, pfun_ia] = vfi(par, tol, maxiter);
-% Optimal next-period asset level (savings)
+
+% Savings policy function (optimal next-period asset level)
 a_opt = par.grid_a(pfun_ia);
 
 % Solve problem using interpolation. Admissible interpolation methods
@@ -54,13 +57,41 @@ a_opt = par.grid_a(pfun_ia);
 % 'pchip', 'spline', ...
 % [vfun, a_opt] = vfi_interp(par, tol, maxiter, 'pchip');
 
-%% Plot value and policy functions for savings and consumption
+%% Recover consumption policy function
 
 % Cash-at-hand at beginning of period
 cah = (1.0 + par.r) * par.grid_a + par.y;
 
-% Optimal consumption level
-cons_opt = cah - a_opt;
+% Consumption policy function (optimal consumption level)
+pfun_cons = cah - a_opt;
+
+%% Plot value and policy functions (simple plotting)
+
+% Plot value functions
+subplot(1,3,1);
+plot(par.grid_a, vfun);
+title('Value function');
+xlabel('Assets');
+
+% Plot savings (i.e. next-period assets)
+subplot(1,3,2);
+plot(par.grid_a, a_opt);
+title('Savings');
+xlabel('Assets');
+
+% Plot optimal consumption
+subplot(1,3,3);
+plot(par.grid_a, pfun_cons);
+title('Consumption');
+xlabel('Assets');
+
+%% Plot value and policy functions (advanced plotting)
+
+% The code below creates prettier graphs which are otherwise identical
+% to the simple graphs from above.
+
+% Close previous figure
+close all
 
 % Settings governing plot style
 aspect = 1.0;
@@ -97,14 +128,14 @@ xticks(xticks_);
 
 % Plot optimal consumption
 subplot(1,3,3);
-plot(par.grid_a, cons_opt, 'LineWidth', 1.5, 'Color', steelblue);
+plot(par.grid_a, pfun_cons, 'LineWidth', 1.5, 'Color', steelblue);
 % Use custom function to set common plot style
 set_ax_plot_style(gca, aspect);
 title('Consumption');
 xlabel('Assets');
 % Set plot limits and ticks
 xlim(xlim_);
-ylim([cons_opt(1), cons_opt(ixmax)]);
+ylim([pfun_cons(1), pfun_cons(ixmax)]);
 xticks(xticks_);
 
 %% Export figure to PDF
