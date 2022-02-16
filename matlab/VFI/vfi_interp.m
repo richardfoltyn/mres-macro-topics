@@ -64,9 +64,9 @@ function [vfun, pfun_sav] = vfi_interp(par, tol, maxiter, method)
             pfun_sav(ia) = sav;
         end
     
-        % check whether we have convergence, ie. difference to last iteration is
-        % below desired tolerance level. If this is the case, exit the function,
-        % otherwise proceed with next iteration.
+        % check whether we have convergence, ie. difference to last 
+        % iteration is below desired tolerance level. If this is the case, 
+        % exit the function, otherwise proceed with next iteration.
         diff = max(max(abs(vfun-vfun_upd)));
         
         % update using newly computed value function

@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2020-21
+% Topics in Macroeconomics (ECON5098), 2021-22
 %
 % Main file to run the infinite-horizon endogenous grid-point method (EGM) 
 % for problem with risky labour income and plot results.
@@ -25,6 +25,7 @@ par.gamma = 2.0;            % Relative risk aversion (RRA)
 par.r = 0.04;               % Interest rate
 
 % Asset grid parameters
+par.a_min = 0;              % Lower bound of asset grid
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid
 
@@ -41,7 +42,11 @@ par.N_y = 3;                % Grid size for discretised process
 
 % Asset grid: allocate more points towards the left end, i.e. at lower asset 
 % levels.
-grid_a = powerspace(0.0, par.a_max, par.N_a, 1.3);
+% Step 1: create grid on [0,1] that is more dense for smaller values
+grid_01 = linspace(0.0, 1.0, par.N_a) .^ 1.3;
+% Step 2: Rescale onto desired asset range
+grid_a = par.a_min + (par.a_max - par.a_min) * grid_01;
+
 % Store asset grid as column vector!
 par.grid_a = grid_a';
 
@@ -71,9 +76,32 @@ maxiter = 1000;
 % Solve problem using infinite-horizon EGM algorithm.
 % Function returns consumption and savings policy functions defined on
 % asset grid.
-[cons_opt, a_opt] = egm_IH_risk(par, tol, maxiter);
+[pfun_cons, pfun_sav] = egm_IH_risk(par, tol, maxiter);
 
-%% Plot policy functions for savings and consumption
+%% Plot policy functions for savings and consumption (simple plots)
+
+
+% Plot savings (i.e. next-period assets)
+subplot(1,2,1);
+plot(par.grid_a, pfun_sav);
+title('Savings');
+xlabel('Assets');
+
+
+% Plot optimal consumption
+subplot(1,2,2);
+plot(par.grid_a, pfun_cons);
+title('Consumption');
+xlabel('Assets');
+
+%% Plot policy functions for savings and consumption (advanced plots)
+
+
+% The code below creates prettier graphs which are otherwise identical
+% to the simple graphs from above.
+
+% Close previous figure
+close all
 
 % Settings governing plot style
 aspect = 1.0;
@@ -104,7 +132,7 @@ labels = arrayfun(@(x) sprintf('y=%.3f', x), par.grid_y, 'UniformOutput', false)
 % Plot savings (i.e. next-period assets)
 subplot(1,2,1);
 for iy = 1:par.N_y
-    plot(par.grid_a, a_opt(:,iy), 'LineWidth', 1.5, 'Color', colours(:,iy));
+    plot(par.grid_a, pfun_sav(:,iy), 'LineWidth', 1.5, 'Color', colours(:,iy));
     hold on;
 end
 hold off;
@@ -114,14 +142,14 @@ title('Savings');
 xlabel('Assets');
 % Set plot limits and ticks
 xlim(xlim_);
-ylim([0, max(a_opt(ixmax,:))]);
+ylim([0, max(pfun_sav(ixmax,:))]);
 xticks(xticks_);
 legend(labels, 'Location', 'NorthWest');
 
 % Plot optimal consumption
 subplot(1,2,2);
 for iy = 1:par.N_y
-    plot(par.grid_a, cons_opt(:,iy), 'LineWidth', 1.5, 'Color', colours(:,iy));
+    plot(par.grid_a, pfun_cons(:,iy), 'LineWidth', 1.5, 'Color', colours(:,iy));
     hold on;
 end
 hold off;
@@ -131,7 +159,7 @@ title('Consumption');
 xlabel('Assets');
 % Set plot limits and ticks
 xlim(xlim_);
-ylim([min(cons_opt(1,:)), max(cons_opt(ixmax,:))]);
+ylim([min(pfun_cons(1,:)), max(pfun_cons(ixmax,:))]);
 xticks(xticks_);
 
 %% Export figure to PDF

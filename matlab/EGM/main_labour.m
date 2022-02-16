@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2020-21
+% Topics in Macroeconomics (ECON5098), 2021-22
 %
 % Main file to run the infinite-horizon endogenous grid-point method (EGM) 
 % for problem with deterministic labour income and plot results.
@@ -26,6 +26,7 @@ par.r = 0.04;               % Interest rate
 par.y = 1;                  % Constant labour income
 
 % Asset and savings grid parameters
+par.a_min = 0;              % Lower bound of asset grid
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid
 
@@ -37,7 +38,11 @@ par.N_a = 100;              % Number of points on asset grid
 
 % Asset grid: allocate more points towards the left end, i.e. at lower asset 
 % levels.
-grid_a = powerspace(0.0, par.a_max, par.N_a, 1.3);
+% Step 1: create grid on [0,1] that is more dense for smaller values
+grid_01 = linspace(0.0, 1.0, par.N_a) .^ 1.3;
+% Step 2: Rescale onto desired asset range
+grid_a = par.a_min + (par.a_max - par.a_min) * grid_01;
+
 % Store asset grid as column vector!
 par.grid_a = grid_a';
 
@@ -51,9 +56,31 @@ maxiter = 1000;
 % Solve problem using infinite-horizon EGM algorithm.
 % Function returns consumption and savings policy functions defined on
 % asset grid.
-[cons_opt, a_opt] = egm_IH(par, tol, maxiter);
+[pfun_cons, pfun_sav] = egm_IH(par, tol, maxiter);
 
-%% Plot policy functions for savings and consumption
+%% Plot policy functions for savings and consumption (simple plotting)
+
+% Plot savings (i.e. next-period assets)
+subplot(1,2,1);
+plot(par.grid_a, pfun_sav);
+title('Savings');
+xlabel('Assets');
+
+
+% Plot optimal consumption
+subplot(1,2,2);
+plot(par.grid_a, pfun_cons);
+title('Consumption');
+xlabel('Assets');
+
+
+%% Plot policy functions for savings and consumption (advanced plotting)
+
+% The code below creates prettier graphs which are otherwise identical
+% to the simple graphs from above.
+
+% Close previous figure
+close all
 
 % Settings governing plot style
 aspect = 1.0;
@@ -66,26 +93,26 @@ steelblue = [70/255, 130/255, 180/255];
 
 % Plot savings (i.e. next-period assets)
 subplot(1,2,1);
-plot(par.grid_a, a_opt, 'LineWidth', 1.5, 'Color', steelblue);
+plot(par.grid_a, pfun_sav, 'LineWidth', 1.5, 'Color', steelblue);
 % Use custom function to set common plot style
 set_ax_plot_style(gca, aspect);
 title('Savings');
 xlabel('Assets');
 % Set plot limits and ticks
 xlim(xlim_);
-ylim([0, a_opt(ixmax)]);
+ylim([0, pfun_sav(ixmax)]);
 xticks(xticks_);
 
 % Plot optimal consumption
 subplot(1,2,2);
-plot(par.grid_a, cons_opt, 'LineWidth', 1.5, 'Color', steelblue);
+plot(par.grid_a, pfun_cons, 'LineWidth', 1.5, 'Color', steelblue);
 % Use custom function to set common plot style
 set_ax_plot_style(gca, aspect);
 title('Consumption');
 xlabel('Assets');
 % Set plot limits and ticks
 xlim(xlim_);
-ylim([cons_opt(1), cons_opt(ixmax)]);
+ylim([pfun_cons(1), pfun_cons(ixmax)]);
 xticks(xticks_);
 
 %% Export figure to PDF
