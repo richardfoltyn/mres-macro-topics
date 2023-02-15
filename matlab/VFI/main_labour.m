@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2021-22
+% Topics in Macroeconomics (ECON5098), 2022-23
 %
 % Main file to run value function iteration (VFI) for problem with 
 % deterministic labour income and plot results.
@@ -30,16 +30,18 @@ par.a_min = 0.0;            % Lower bound of asset grid
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 50;               % Number of points on asset grid
 
-%% Grids
+%% Asset grid
 
-% Asset grid: allocate more points towards the left end, i.e., at lower 
+% We want to allocate more points towards the left end, i.e., at lower 
 % asset levels.
-% We use the convenience function powerspace() from the lib/ folder.
-grid_a = powerspace(par.a_min, par.a_max, par.N_a, 1.3);
+% First create a grid of the desired shape on interval [0,1]
+grid_01 = linspace(0.0, 1.0, par.N_a) .^ 1.3;
+% Transform to final grid on interval [a_min, a_max]
+grid_a = par.a_min + (par.a_max - par.a_min) .* grid_01;
 % Store asset grid as column vector!
 par.grid_a = grid_a';
 
-%% Run value function iteration
+%% Run VFI with grid search
 
 % Termination tolerance for VFI
 tol = 1.0e-6;
@@ -51,6 +53,8 @@ maxiter = 1000;
 
 % Savings policy function (optimal next-period asset level)
 a_opt = par.grid_a(pfun_ia);
+
+%% Run VFI with interpolation
 
 % Solve problem using interpolation. Admissible interpolation methods
 % are those accepted by the interp1() function, e.g. 'linear', 'cubic',
@@ -84,6 +88,7 @@ subplot(1,3,3);
 plot(par.grid_a, pfun_cons);
 title('Consumption');
 xlabel('Assets');
+
 
 %% Plot value and policy functions (advanced plotting)
 

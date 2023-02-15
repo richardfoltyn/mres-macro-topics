@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2021-22
+% Topics in Macroeconomics (ECON5098), 2022-23
 %
 % Main file to run value function iteration (VFI) for problem with 
 % risky labour income and plot results.
@@ -34,15 +34,18 @@ par.rho = 0.95;             % Persistence of AR(1)
 par.sigma = 0.20;           % Conditional std. dev. of AR(1)
 par.N_y = 3;                % Grid size for discretised process
 
-%% Grids
+%% Asset grid
 
-% Asset grid: allocate more points towards the left end, i.e., at lower 
+% We want to allocate more points towards the left end, i.e., at lower 
 % asset levels.
-% We use the convenience function powerspace() from the lib/ folder.
-grid_a = powerspace(par.a_min, par.a_max, par.N_a, 1.3);
+% First create a grid of the desired shape on interval [0,1]
+grid_01 = linspace(0.0, 1.0, par.N_a) .^ 1.3;
+% Transform to final grid on interval [a_min, a_max]
+grid_a = par.a_min + (par.a_max - par.a_min) .* grid_01;
 % Store asset grid as column vector!
 par.grid_a = grid_a';
 
+%% Labour income grid
 
 % Discretize AR(1) labour income process to a first-order Markov chain
 mu = 0.0;                   % Mean of AR(1)
@@ -62,7 +65,7 @@ par.grid_y = grid_y;
 par.tm_y = tm_y;
 
 
-%% Run value function iteration
+%% Run VFI with grid search
 
 % Termination tolerance for VFI
 tol = 1.0e-6;
@@ -72,6 +75,11 @@ maxiter = 1000;
 % Solve problem using grid search
 [vfun, pfun_ia] = vfi_risk(par, tol, maxiter);
 
+% Savings policy function (optimal next-period asset level)
+pfun_sav = par.grid_a(pfun_ia);
+
+%% Run VFI with grid search and Howard's improvement (optional)
+
 % Run VFI with Howard's improvement acceleration algorithm instead.
 % This is an extension of plain VFI. You can ignore this algorithm
 % initially.
@@ -79,12 +87,17 @@ maxiter = 1000;
 % [vfun, pfun_ia] = vfi_risk_howard(par, tol, maxiter,naccel);
 
 % Savings policy function (optimal next-period asset level)
-pfun_sav = par.grid_a(pfun_ia);
+% pfun_sav = par.grid_a(pfun_ia);
+
+%% Run VFI with interpolation
+
+% Termination tolerance for VFI with interpolation
+% tol = 1.0e-5;
 
 % Solve problem using interpolation. Admissible interpolation methods
 % are those accepted by the interp1() function, e.g. 'linear', 'cubic',
 % 'pchip', 'spline', ...
-% [vfun, a_opt] = vfi_risk_interp(par, tol, maxiter, 'pchip');
+% [vfun, pfun_sav] = vfi_risk_interp(par, tol, maxiter, 'pchip');
 
 
 %% Recover consumption policy function

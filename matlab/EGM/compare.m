@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2020-21
+% Topics in Macroeconomics (ECON5098), 2022-23
 %
 % Compare solutions to household problem for two different
 % parametrisations.
@@ -25,7 +25,8 @@ par.gamma = 1.0;            % Relative risk aversion (RRA)
 par.r = 0.04;               % Interest rate
 
 % Asset grid parameters
-par.a_max = 50;             % Upper bound of asset grid
+par.a_min = 0.0;            % Lower bound of asset grid
+par.a_max = 50.0;           % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid
 
 % Labour income process parameters
@@ -33,18 +34,22 @@ par.rho = 0.95;             % Persistence of AR(1)
 par.sigma = 0.20;           % Conditional std. dev. of AR(1)
 par.N_y = 3;                % Grid size for discretised process
 
-%% Grids
+%% Asset and savings grids
 
 % Note: we use the same grid for assets and savings, since
 %   savings = a'
 %   a' becomes the initial asset position next period.
 
-% Asset grid: allocate more points towards the left end, i.e. at lower asset 
-% levels.
-grid_a = powerspace(0.0, par.a_max, par.N_a, 1.3);
+% asset levels.
+% First create a grid of the desired shape on interval [0,1]
+grid_01 = linspace(0.0, 1.0, par.N_a) .^ 1.3;
+% Transform to final grid on interval [a_min, a_max]
+grid_a = par.a_min + (par.a_max - par.a_min) .* grid_01;
+
 % Store asset grid as column vector!
 par.grid_a = grid_a';
 
+%% Labour income grid
 
 % Discretize AR(1) labour income process to a first-order Markov chain
 mu = 0.0;                   % Mean of AR(1)

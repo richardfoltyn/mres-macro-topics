@@ -17,8 +17,8 @@ function [pfun_cons, pfun_sav] = egm_IH_risk(par, tol, maxiter)
     tstart = tic;
 
     % Get dimensions of asset/savings and labour income grids
-    N_a = length(par.grid_a);
-    N_y = length(par.grid_y);
+    N_a = par.N_a;
+    N_y = par.N_y;
     % Dimensions of arrays created below
     dims = [N_a N_y];
 

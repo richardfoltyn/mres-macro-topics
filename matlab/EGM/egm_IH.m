@@ -16,7 +16,7 @@ function [pfun_cons, pfun_sav] = egm_IH(par, tol, maxiter)
     % start timer to calculate how long it takes to run EGM
     tstart = tic;
    
-    N_a = length(par.grid_a);
+    N_a = par.N_a;
     % Dimensions of arrays created below
     dims = [N_a 1];
 

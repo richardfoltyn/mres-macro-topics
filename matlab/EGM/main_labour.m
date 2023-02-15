@@ -1,5 +1,5 @@
 %
-% Topics in Macroeconomics (ECON5098), 2021-22
+% Topics in Macroeconomics (ECON5098), 2022-23
 %
 % Main file to run the infinite-horizon endogenous grid-point method (EGM) 
 % for problem with deterministic labour income and plot results.
@@ -30,18 +30,19 @@ par.a_min = 0;              % Lower bound of asset grid
 par.a_max = 50;             % Upper bound of asset grid
 par.N_a = 100;              % Number of points on asset grid
 
-%% Grids
+
+%% Asset and savings grids
 
 % Note: we use the same grid for assets and savings, since
 %   savings = a'
 %   a' becomes the initial asset position next period.
 
-% Asset grid: allocate more points towards the left end, i.e. at lower asset 
-% levels.
-% Step 1: create grid on [0,1] that is more dense for smaller values
+% We want to allocate more points towards the left end, i.e., at lower 
+% asset levels.
+% First create a grid of the desired shape on interval [0,1]
 grid_01 = linspace(0.0, 1.0, par.N_a) .^ 1.3;
-% Step 2: Rescale onto desired asset range
-grid_a = par.a_min + (par.a_max - par.a_min) * grid_01;
+% Transform to final grid on interval [a_min, a_max]
+grid_a = par.a_min + (par.a_max - par.a_min) .* grid_01;
 
 % Store asset grid as column vector!
 par.grid_a = grid_a';
