@@ -8,7 +8,13 @@ grid-point method (EGM), given by
         s.t.    c + a' = (1+r)a + w*y*l
                 l >= 0, a' >= 0, c >= 0
 
-        with    u(c,l) = (c^(1-gamma)-1)/(1-gamma) - chi*l^(1+1/phi)/(1+1/phi)
+        with
+            u(c,l) = (c^(1-gamma)-1)/(1-gamma) - chi*l^(1+1/phi)/(1+1/phi)
+        or
+            u(c,l) = (c^(1-gamma)-1)/(1-gamma)  + chi * log(1-l)
+
+            and the additional constraint l <= 1
+
 
 Note: This implementation uses the same grid for exogenous savings
     and beginning-of-period assets. This is not required, but spares
@@ -30,22 +36,31 @@ from helpers import powerspace
 from env import graphdir
 from src.helpers import rouwenhorst, markov_ergodic_dist
 
-GRID_KWARGS = {'b': True, 'lw': 0.5, 'ls': ':', 'alpha': 0.5, 'color': '#333333',
-               'zorder': -500}
+GRID_KWARGS = {
+    'visible': True,
+    'lw': 0.5,
+    'ls': ':',
+    'alpha': 0.5,
+    'color': '#333333',
+    'zorder': -500
+}
 
 
 def main():
     attrs = ['gamma', 'beta', 'chi', 'phi', 'r', 'w', 'lab_ub', 'grid_a',
-             'grid_y', 'tm_y']
+             'grid_y', 'tm_y', 'log_leisure']
     Params = namedtuple('Params', attrs)
 
     # Preference parameters
     gamma = 1.0
     beta = 0.96
-    chi = 1.0
+    chi = 0.1
     phi = 1.0
+    # Switch between MaCurdy preferences and log leisure
+    log_leisure = True
+
     # Optional upper bound on labour supply
-    lab_ub = 100.0
+    lab_ub = 1.0 if log_leisure else 100.0
 
     # prices
     r = 0.04
@@ -61,7 +76,7 @@ def main():
     N_a = 1000
 
     # Create asset grid
-    grid_a = powerspace(0.0, a_max, N_a, 1.3)
+    grid_a = powerspace(0.0, a_max, N_a, 1.5)
 
     # Discretised labour income process
     states, tm_y = rouwenhorst(N_y, mu=0.0, rho=rho, sigma=sigma)
@@ -73,7 +88,7 @@ def main():
     grid_y /= np.dot(edist, grid_y)
 
     # store parameters in common structure
-    par = Params(gamma, beta, chi, phi, r, w, lab_ub, grid_a, grid_y, tm_y)
+    par = Params(gamma, beta, chi, phi, r, w, lab_ub, grid_a, grid_y, tm_y, log_leisure)
 
     # === EGM ===
 
@@ -175,10 +190,17 @@ def egm_IH(par, tol=1.0e-8, maxiter=10000):
             # Implied labour supply from intratemporal optimality condition
             # Note that lambda = c^-gamma = EE_RHS where lambda is the
             # Lagrange multiplier on the budget constraint.
-            labour_sav = (ee_rhs * w * y / chi) ** phi
+            if par.log_leisure:
+                # Utility function is given by
+                #   u(c,l) = (c^(1-gamma)-1)/(1-gamma)  + chi * log(1-l)
+                # and 0 <= l < 1.
+                labour_sav = 1.0 - chi / (cons_sav**(-gamma) * w * y)
+            else:
+                labour_sav = (ee_rhs * w * y / chi) ** phi
 
             # Enforce boundary constraints
             labour_sav = np.fmin(par.lab_ub, labour_sav)
+            labour_sav = np.fmax(0.0, labour_sav)
 
             # Implied earnings
             earn = y * w * labour_sav
@@ -263,9 +285,15 @@ def solve_no_sav(par, a, y):
     r, w = par.r, par.w
 
     def foc(l):
-        term1 = -chi * l**(1.0/phi)
-        term2 = ((1.0+r)*a + y*w*l)**(-gamma) * w * y
-        fx = term1 + term2
+        c = (1.0+r)*a + y*w*l
+        if par.log_leisure:
+            # Log leisure preferences
+            fx = 1.0 - chi / (c**(-gamma) * w * y) - l
+        else:
+            # MaCurdy preferences
+            term1 = -chi * l**(1.0/phi)
+            term2 = c**(-gamma) * w * y
+            fx = term1 + term2
         return fx
 
     # Check boundary solution
